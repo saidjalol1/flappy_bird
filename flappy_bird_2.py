@@ -18,38 +18,17 @@ pipe = pygame.image.load("rasmlar/pipe.png")
 restart = pygame.image.load("rasmlar/restart.png")
 
 
+bird_images = [
+    pygame.image.load('rasmlar/bird1.png'),
+    pygame.image.load('rasmlar/bird2.png'),
+    pygame.image.load('rasmlar/bird3.png')
+]
 
-class Bird(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.images = []
-        self.index = 0
-        self.counter = 0
-        for num in range(1, 4):
-            img = pygame.image.load(f"rasmlar/bird{num}.png")
-            self.images.append(img)
-            
-        self.image = pygame.image.load("rasmlar/bird1.png")
-        self.rect = self.image.get_rect()
-        self.rect.center = [x, y]
-        
-    def update(self):
-        #animatsiya
-        self.counter += 1
-        bird_down = 5
-        
-        if self.counter > bird_down:
-            self.counter = 0
-            self.index += 1
-            if self.index >= len(self.images):
-                self.index = 0
-        self.image = self.images[self.index]
-        
-
-bird_group = pygame.sprite.Group()
-flappy = Bird(100, int(screen_height / 2))
-bird_group.add(flappy)
-
+bird_index = 0
+bird_rect = bird_images[0].get_rect()
+bird_rect.center = (100, screen_height // 2)
+bird_speed = 0
+jump_velocity = -10
 
 # game_veraiables
 ground_scroll = 0
@@ -62,8 +41,7 @@ while run:
     #Bird draw
     #background chizish
     screen.blit(bg, (0,0))
-    bird_group.draw(screen)
-    bird_group.update()
+   
     #yerni chizish
     screen.blit(ground, (ground_scroll, 768))
     ground_scroll -= scroll_speed
@@ -74,6 +52,24 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                 bird_speed = -10
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                pass
+            
+    if bird_rect.y < 768:
+        bird_rect.y += bird_speed
+    bird_speed += 0.5
+    if bird_speed > 8:
+        bird_speed = 8
+        
+        
+    screen.blit(bird_images[bird_index], bird_rect)
+    bird_index = (bird_index + 1) % len(bird_images)
+    
+        
     
     pygame.display.update()
     
