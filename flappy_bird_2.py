@@ -29,7 +29,8 @@ bird_rect = bird_images[0].get_rect()
 bird_rect.center = (100, screen_height // 2)
 bird_speed = 0
 jump_velocity = -10
-
+flying = False
+game_over = False
 # game_veraiables
 ground_scroll = 0
 scroll_speed = 4
@@ -44,28 +45,35 @@ while run:
    
     #yerni chizish
     screen.blit(ground, (ground_scroll, 768))
-    ground_scroll -= scroll_speed
     
-    if abs(ground_scroll) > 35:
-        ground_scroll = 0
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        elif event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == pygame.MOUSEBUTTONUP and flying == True:
             if event.button == 1:
-                 bird_speed = -10
-        elif event.type == pygame.MOUSEBUTTONUP:
+                flying = True
+                bird_speed = -10
+        elif event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
             if event.button == 1:
-                pass
+                flying = True
+                
+    if flying:        
+        if bird_rect.y < 768:
+            bird_rect.y += bird_speed
+        bird_speed += 0.5
+        if bird_speed > 8:
+            bird_speed = 8
+    
+    if bird_rect.bottom > 768:
+        game_over = True
+        flying = False
+        
+    if game_over == False:
+        ground_scroll -= scroll_speed
+        if abs(ground_scroll) > 35:
+            ground_scroll = 0
             
-    if bird_rect.y < 768:
-        bird_rect.y += bird_speed
-    bird_speed += 0.5
-    if bird_speed > 8:
-        bird_speed = 8
-        
-        
     screen.blit(bird_images[bird_index], bird_rect)
     bird_index = (bird_index + 1) % len(bird_images)
     
