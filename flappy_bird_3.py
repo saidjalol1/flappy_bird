@@ -14,7 +14,7 @@ pygame.display.set_caption("Flappy Bird")
 #load images
 bg = pygame.image.load("rasmlar/bg.png")
 ground = pygame.image.load("rasmlar/ground.png")
-pipe = pygame.image.load("rasmlar/pipe.png")
+pipe_image = pygame.image.load("rasmlar/pipe.png")
 restart = pygame.image.load("rasmlar/restart.png")
 
 
@@ -38,32 +38,48 @@ game_over = False
 ground_scroll = 0
 scroll_speed = 4
 
-pipe_image = pygame.image.load('rasmlar/pipe.png').convert_alpha()
-pipe_width = pipe_image.get_width()
-pipe_height = pipe_image.get_height()
-
-PIPE_GAP = 150
-PIPE_SPEED = 3
-SPAWN_PIPE_EVENT = pygame.USEREVENT + 1
-pygame.time.set_timer(SPAWN_PIPE_EVENT, 1200)
+pipe_gap = 200
+pipe_frequency = 5500  # milliseconds
+last_pipe = pygame.time.get_ticks() - pipe_frequency
 
 pipes = []
 
 def create_pipe():
-    gap_y = random.randint(100, screen_height - 100 - PIPE_GAP)
-    top_pipe = pipe_image.get_rect(midbottom=(screen_width, gap_y))
-    bottom_pipe = pipe_image.get_rect(midtop=(screen_width, gap_y + PIPE_GAP))
-    return top_pipe, bottom_pipe
+    pipe_height = random.randint(-100, 100)
+    bottom_pipe = pipe_image.get_rect(midtop=(screen_width + 100, screen_height // 2 + pipe_height))
+    top_pipe = pipe_image.get_rect(midbottom=(screen_width + 100, screen_height // 2 - pipe_gap + pipe_height))
+    pipes.append((bottom_pipe, top_pipe))
 
-def move_and_draw_pipes(pipes):
+def move_pipes():
+    global pipes
     for pipe in pipes:
-        pipe.centerx -= PIPE_SPEED
-        if pipe.top < 0:  # This is the top pipe
-            flipped_pipe = pygame.transform.flip(pipe_image, False, True)
-            screen.blit(flipped_pipe, pipe)
-        else:  # This is the bottom pipe
-            screen.blit(pipe_image, pipe)
-    return [pipe for pipe in pipes if pipe.right > 0]
+        pipe[0].centerx -= scroll_speed
+        pipe[1].centerx -= scroll_speed
+    pipes = [pipe for pipe in pipes if pipe[0].right > 0]
+
+def draw_pipes():
+    for pipe in pipes:
+        screen.blit(pipe_image, pipe[0])
+        flip_pipe = pygame.transform.flip(pipe_image, False, True)
+        screen.blit(flip_pipe, pipe[1])
+
+def check_collision():
+    global game_over, flying
+    for pipe in pipes:
+        if bird_rect.colliderect(pipe[0]) or bird_rect.colliderect(pipe[1]):
+            game_over = True
+            flying = False
+    if bird_rect.top <= 0 or bird_rect.bottom >= 768:
+        game_over = True
+        flying = False
+
+def reset_game():
+    global bird_rect, bird_speed, flying, game_over, pipes
+    bird_rect.center = (100, screen_height // 2)
+    bird_speed = 0
+    flying = False
+    game_over = False
+    pipes = []
 
 run  = True
 while run:
@@ -72,7 +88,6 @@ while run:
     #Bird draw
     #background chizish
     screen.blit(bg, (0,0))
-    pipes = move_and_draw_pipes(pipes)
     #yerni chizish
     screen.blit(ground, (ground_scroll, 768))
     
@@ -87,10 +102,16 @@ while run:
         elif event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
             if event.button == 1:
                 flying = True
-        elif event.type == SPAWN_PIPE_EVENT:
-            pipes.extend(create_pipe())
             
-    if flying:        
+    if flying: 
+        time_now = pygame.time.get_ticks()
+        if time_now - last_pipe > pipe_frequency:
+            create_pipe()
+            last_pipe = time_now
+
+        move_pipes()
+        draw_pipes()
+        check_collision()
         if bird_rect.y < 768:
             bird_rect.y += bird_speed
         bird_speed += 0.5
@@ -108,8 +129,13 @@ while run:
             
     screen.blit(bird_images[bird_index], bird_rect)
     bird_index = (bird_index + 1) % len(bird_images)
-    
-        
+
+    if game_over:
+        screen.blit(restart, (screen_width // 2 - restart.get_width() // 2, screen_height // 2 - restart.get_height() // 2))
+        if pygame.mouse.get_pressed()[0] and not flying:
+            mouse_pos = pygame.mouse.get_pos()
+            if screen_width // 2 - restart.get_width() // 2 < mouse_pos[0] < screen_width // 2 + restart.get_width() // 2 and screen_height // 2 - restart.get_height() // 2 < mouse_pos[1] < screen_height // 2 + restart.get_height() // 2:
+                reset_game()
     
     pygame.display.update()
     
